@@ -32,7 +32,11 @@ import com.adaptris.core.services.metadata.xpath.XpathQuery;
 import com.adaptris.core.util.DocumentBuilderFactoryBuilder;
 import com.adaptris.util.KeyValuePair;
 import com.adaptris.util.KeyValuePairSet;
+import com.adaptris.util.text.xml.DynamicNamespaceContextBuilder;
+import com.adaptris.util.text.xml.NamespaceContextBuilder;
+import com.adaptris.util.text.xml.StaticNamespaceContextBuilder;
 
+@SuppressWarnings("deprecation")
 public class XpathMetadataServiceTest extends MetadataServiceExample {
 
   public static final String XML = "<?xml version=\"1.0\"?><message><message-type>order"
@@ -75,6 +79,16 @@ public class XpathMetadataServiceTest extends MetadataServiceExample {
     assertNull(obj.getNamespaceContext());
   }
 
+  public void testSetNamespaceContextBuilder() {
+    XpathMetadataService obj = new XpathMetadataService();
+    assertNull(obj.getNamespaceContextBuilder());
+    NamespaceContextBuilder b = new DynamicNamespaceContextBuilder();
+    obj.setNamespaceContextBuilder(b);
+    assertEquals(b, obj.getNamespaceContextBuilder());
+    obj.setNamespaceContextBuilder(null);
+    assertNull(obj.getNamespaceContextBuilder());
+  }
+
   public void testDoService_NotXML() throws Exception {
     AdaptrisMessage msg = AdaptrisMessageFactory.getDefaultInstance().newMessage("ABCDEFG");
     XpathMetadataService service = new XpathMetadataService();
@@ -106,9 +120,30 @@ public class XpathMetadataServiceTest extends MetadataServiceExample {
 
     new ConfiguredXpathQuery("failureCount", "count(/svrl:schematron-output/svrl:failed-assert)"))));
     service.setNamespaceContext(createContextEntries());
-
     execute(service, msg);
+    assertTrue(msg.containsKey("failureCount"));
+    assertEquals("2", msg.getMetadataValue("failureCount"));
+  }
 
+  public void testDoService_UsingXpathQuery_WithStaticNamespaceContext() throws CoreException {
+    AdaptrisMessage msg = AdaptrisMessageFactory.getDefaultInstance().newMessage(XML_WITH_NAMESPACE);
+    XpathMetadataService service = new XpathMetadataService();
+    service.setXpathQueries(new ArrayList<XpathQuery>(Arrays.asList(
+
+        new ConfiguredXpathQuery("failureCount", "count(/svrl:schematron-output/svrl:failed-assert)"))));
+    service.setNamespaceContextBuilder(new StaticNamespaceContextBuilder(createContextEntries()));
+    execute(service, msg);
+    assertTrue(msg.containsKey("failureCount"));
+    assertEquals("2", msg.getMetadataValue("failureCount"));
+  }
+
+  public void testDoService_UsingXpathQuery_WithDynamicNamespaceContext() throws CoreException {
+    AdaptrisMessage msg = AdaptrisMessageFactory.getDefaultInstance().newMessage(XML_WITH_NAMESPACE);
+    XpathMetadataService service = new XpathMetadataService();
+    service.setXpathQueries(new ArrayList<XpathQuery>(Arrays.asList(
+        new ConfiguredXpathQuery("failureCount", "count(/svrl:schematron-output/svrl:failed-assert)"))));
+    service.setNamespaceContextBuilder(new DynamicNamespaceContextBuilder());
+    execute(service, msg);
     assertTrue(msg.containsKey("failureCount"));
     assertEquals("2", msg.getMetadataValue("failureCount"));
   }
@@ -174,7 +209,7 @@ public class XpathMetadataServiceTest extends MetadataServiceExample {
             "//xpath/that/resolves/to/multiple/items"), new MultiItemMetadataXpathQuery("key5",
             "metadata_containing_an_Xpath_that_resolves_to_multiple_items"), new ConfiguredXpathQuery("key6",
             "/svrl:output/svrl:value"))));
-    service.setNamespaceContext(createContextEntries());
+    service.setNamespaceContextBuilder(new StaticNamespaceContextBuilder(createContextEntries()));
     return service;
   }
 

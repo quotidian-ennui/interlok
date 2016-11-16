@@ -41,7 +41,8 @@ import com.adaptris.core.services.metadata.xpath.XpathQuery;
 import com.adaptris.core.util.DocumentBuilderFactoryBuilder;
 import com.adaptris.core.util.XmlHelper;
 import com.adaptris.util.KeyValuePairSet;
-import com.adaptris.util.text.xml.SimpleNamespaceContext;
+import com.adaptris.util.text.xml.NamespaceContextBuilder;
+import com.adaptris.util.text.xml.StaticNamespaceContextBuilder;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamImplicit;
 
@@ -67,10 +68,14 @@ public class XpathMetadataService extends ServiceImp {
   private List<XpathQuery> xpathQueries;
   @AdvancedConfig
   @Valid
+  @Deprecated
   private KeyValuePairSet namespaceContext;
   @AdvancedConfig
   @Valid
   private DocumentBuilderFactoryBuilder xmlDocumentFactoryConfig;
+  @AdvancedConfig
+  @Valid
+  private NamespaceContextBuilder namespaceContextBuilder;
 
   private transient List<XpathQuery> queriesToExecute;
 
@@ -101,9 +106,10 @@ public class XpathMetadataService extends ServiceImp {
   public void doService(AdaptrisMessage msg) throws ServiceException {
 
     Set<MetadataElement> metadataElements = new HashSet<MetadataElement>();
-    NamespaceContext namespaceCtx = SimpleNamespaceContext.create(getNamespaceContext(), msg);
     try {
       DocumentBuilderFactoryBuilder builder = documentFactoryBuilder();
+      NamespaceContextBuilder namespaceBuilder = namespaceBuilder();
+      NamespaceContext namespaceCtx = namespaceBuilder.build(msg, namespaceBuilder.newDocumentBuilder(builder));
       if (namespaceCtx != null) {
         builder.setNamespaceAware(true);
       }
@@ -120,6 +126,11 @@ public class XpathMetadataService extends ServiceImp {
   }
 
 
+  /**
+   * 
+   * @deprecated since 3.5.1
+   */
+  @Deprecated
   public KeyValuePairSet getNamespaceContext() {
     return namespaceContext;
   }
@@ -132,7 +143,9 @@ public class XpathMetadataService extends ServiceImp {
    * </ul>
    *
    * @param namespaceContext
+   * @deprecated since 3.5.1 Use {@link #setNamespaceContextBuilder(NamespaceContextBuilder)} instead.
    */
+  @Deprecated
   public void setNamespaceContext(KeyValuePairSet namespaceContext) {
     this.namespaceContext = namespaceContext;
   }
@@ -176,7 +189,26 @@ public class XpathMetadataService extends ServiceImp {
   }
 
   DocumentBuilderFactoryBuilder documentFactoryBuilder() {
-    return getXmlDocumentFactoryConfig() != null ? getXmlDocumentFactoryConfig()
- : DocumentBuilderFactoryBuilder.newInstance();
+    return getXmlDocumentFactoryConfig() != null ? getXmlDocumentFactoryConfig() : DocumentBuilderFactoryBuilder.newInstance();
+  }
+
+  /**
+   * @return the namespaceContextBuilder
+   */
+  public NamespaceContextBuilder getNamespaceContextBuilder() {
+    return namespaceContextBuilder;
+  }
+
+  /**
+   * @param s the namespaceContextBuilder to set
+   */
+  public void setNamespaceContextBuilder(NamespaceContextBuilder s) {
+    this.namespaceContextBuilder = s;
+  }
+
+  NamespaceContextBuilder namespaceBuilder() {
+    return getNamespaceContextBuilder() != null
+        ? getNamespaceContextBuilder()
+        : new StaticNamespaceContextBuilder(getNamespaceContext());
   }
 }

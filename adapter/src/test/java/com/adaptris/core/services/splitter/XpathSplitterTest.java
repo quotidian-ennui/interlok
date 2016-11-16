@@ -38,6 +38,9 @@ import com.adaptris.core.stubs.StubMessageFactory;
 import com.adaptris.core.util.DocumentBuilderFactoryBuilder;
 import com.adaptris.util.KeyValuePair;
 import com.adaptris.util.KeyValuePairSet;
+import com.adaptris.util.text.xml.DynamicNamespaceContextBuilder;
+import com.adaptris.util.text.xml.NamespaceContextBuilder;
+import com.adaptris.util.text.xml.StaticNamespaceContextBuilder;
 import com.adaptris.util.text.xml.XPath;
 
 public class XpathSplitterTest extends SplitterCase {
@@ -141,6 +144,16 @@ public class XpathSplitterTest extends SplitterCase {
     assertNull(obj.getNamespaceContext());
   }
 
+  public void testSetNamespaceContextBuilder() {
+    XpathMessageSplitter obj = new XpathMessageSplitter();
+    assertNull(obj.getNamespaceContextBuilder());
+    NamespaceContextBuilder b = new DynamicNamespaceContextBuilder();
+    obj.setNamespaceContextBuilder(b);
+    assertEquals(b, obj.getNamespaceContextBuilder());
+    obj.setNamespaceContextBuilder(null);
+    assertNull(obj.getNamespaceContextBuilder());
+  }
+
   public void testSplit() throws Exception {
     AdaptrisMessage msg = AdaptrisMessageFactory.getDefaultInstance().newMessage(XML_MESSAGE);
     String obj = "ABCDEFG";
@@ -222,6 +235,24 @@ public class XpathSplitterTest extends SplitterCase {
     AdaptrisMessage msg = AdaptrisMessageFactory.getDefaultInstance().newMessage(XpathMetadataServiceTest.XML_WITH_NAMESPACE);
     XpathMessageSplitter splitter = new XpathMessageSplitter("/svrl:schematron-output/svrl:failed-assert", "UTF-8");
     splitter.setNamespaceContext(XpathMetadataServiceTest.createContextEntries());
+    List<AdaptrisMessage> result = splitter.splitMessage(msg);
+    // Should be 2 splits
+    assertEquals("Number of messages", 2, result.size());
+  }
+
+  public void testXmlSplitter_StaticNamespace() throws Exception {
+    AdaptrisMessage msg = AdaptrisMessageFactory.getDefaultInstance().newMessage(XpathMetadataServiceTest.XML_WITH_NAMESPACE);
+    XpathMessageSplitter splitter = new XpathMessageSplitter("/svrl:schematron-output/svrl:failed-assert", "UTF-8");
+    splitter.setNamespaceContextBuilder(new StaticNamespaceContextBuilder(XpathMetadataServiceTest.createContextEntries()));
+    List<AdaptrisMessage> result = splitter.splitMessage(msg);
+    // Should be 2 splits
+    assertEquals("Number of messages", 2, result.size());
+  }
+
+  public void testXmlSplitter_DynamicNamespace() throws Exception {
+    AdaptrisMessage msg = AdaptrisMessageFactory.getDefaultInstance().newMessage(XpathMetadataServiceTest.XML_WITH_NAMESPACE);
+    XpathMessageSplitter splitter = new XpathMessageSplitter("/svrl:schematron-output/svrl:failed-assert", "UTF-8");
+    splitter.setNamespaceContextBuilder(new DynamicNamespaceContextBuilder());
     List<AdaptrisMessage> result = splitter.splitMessage(msg);
     // Should be 2 splits
     assertEquals("Number of messages", 2, result.size());

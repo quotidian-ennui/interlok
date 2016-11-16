@@ -192,7 +192,9 @@ public class XpathMessageSplitter extends MessageSplitterImp {
 
   /**
    * @return the namespaceContext
+   * @deprecated since 3.5.1 Use {@link #getNamespaceContextBuilder()} instead.
    */
+  @Deprecated
   public KeyValuePairSet getNamespaceContext() {
     return namespaceContext;
   }
@@ -206,7 +208,9 @@ public class XpathMessageSplitter extends MessageSplitterImp {
    * 
    * @param kvps the namespace context
    * @see SimpleNamespaceContext#create(KeyValuePairSet)
+   * @deprecated since 3.5.1 Use {@link #setNamespaceContextBuilder(NamespaceContextBuilder)} instead.
    */
+  @Deprecated
   public void setNamespaceContext(KeyValuePairSet kvps) {
     this.namespaceContext = kvps;
   }
