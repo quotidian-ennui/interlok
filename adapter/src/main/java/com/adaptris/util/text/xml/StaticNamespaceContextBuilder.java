@@ -17,12 +17,19 @@ package com.adaptris.util.text.xml;
 
 import javax.validation.Valid;
 import javax.xml.namespace.NamespaceContext;
-import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
 
 import com.adaptris.core.AdaptrisMessage;
 import com.adaptris.util.KeyValuePairSet;
+import com.thoughtworks.xstream.annotations.XStreamAlias;
 
-public class StaticNamespaceContextBuilder implements NamespaceContextBuilder {
+/**
+ * @config static-namespace-context-builder
+ * @author lchan
+ *
+ */
+@XStreamAlias("static-namespace-context-builder")
+public class StaticNamespaceContextBuilder extends NamespaceContextBuilder {
   @Valid
   private KeyValuePairSet namespaceContext;
 
@@ -57,7 +64,7 @@ public class StaticNamespaceContextBuilder implements NamespaceContextBuilder {
   }
 
   @Override
-  public NamespaceContext create(AdaptrisMessage msg, DocumentBuilderFactory f) {
+  public NamespaceContext build(AdaptrisMessage msg, DocumentBuilder f) {
     return SimpleNamespaceContext.create(getNamespaceContext(), msg);
   }
 }

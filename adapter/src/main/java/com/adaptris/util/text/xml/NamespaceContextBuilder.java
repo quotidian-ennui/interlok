@@ -16,11 +16,25 @@
 package com.adaptris.util.text.xml;
 
 import javax.xml.namespace.NamespaceContext;
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import com.adaptris.core.AdaptrisMessage;
+import com.adaptris.core.util.DocumentBuilderFactoryBuilder;
 
-public interface NamespaceContextBuilder {
+public abstract class NamespaceContextBuilder {
 
-  NamespaceContext create(AdaptrisMessage msg, DocumentBuilderFactory f) throws Exception;
+  public NamespaceContextBuilder() {
+
+  }
+
+  public abstract NamespaceContext build(AdaptrisMessage msg, DocumentBuilder f) throws Exception;
+
+  public DocumentBuilder newDocumentBuilder(DocumentBuilderFactoryBuilder f) throws ParserConfigurationException {
+    DocumentBuilderFactoryBuilder factory = f == null ? DocumentBuilderFactoryBuilder.newInstance() : f;
+    DocumentBuilderFactory dbf= factory.configure(DocumentBuilderFactory.newInstance());
+    dbf.setNamespaceAware(true);
+    return dbf.newDocumentBuilder();
+  }
 }

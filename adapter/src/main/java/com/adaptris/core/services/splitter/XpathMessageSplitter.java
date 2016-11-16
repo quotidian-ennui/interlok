@@ -24,6 +24,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilder;
@@ -44,7 +45,9 @@ import com.adaptris.core.CoreException;
 import com.adaptris.core.util.DocumentBuilderFactoryBuilder;
 import com.adaptris.util.KeyValuePairSet;
 import com.adaptris.util.XmlUtils;
+import com.adaptris.util.text.xml.NamespaceContextBuilder;
 import com.adaptris.util.text.xml.SimpleNamespaceContext;
+import com.adaptris.util.text.xml.StaticNamespaceContextBuilder;
 import com.adaptris.util.text.xml.XPath;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 
@@ -87,6 +90,9 @@ public class XpathMessageSplitter extends MessageSplitterImp {
   private KeyValuePairSet namespaceContext;
   @AdvancedConfig
   private DocumentBuilderFactoryBuilder xmlDocumentFactoryConfig;
+  @AdvancedConfig
+  @Valid
+  private NamespaceContextBuilder namespaceContextBuilder;
 
   public XpathMessageSplitter() {
     this(null, null);
@@ -105,10 +111,11 @@ public class XpathMessageSplitter extends MessageSplitterImp {
   public List<AdaptrisMessage> splitMessage(AdaptrisMessage msg) throws CoreException {
     List<AdaptrisMessage> result = new ArrayList<AdaptrisMessage>();
     try {
-      NamespaceContext namespaceCtx = SimpleNamespaceContext.create(getNamespaceContext(), msg);
+      NamespaceContextBuilder namespaceBuilder = namespaceBuilder();
       DocumentBuilderFactoryBuilder factoryBuilder = documentFactoryBuilder();
+      NamespaceContext namespaceCtx = namespaceBuilder.build(msg, namespaceBuilder.newDocumentBuilder(factoryBuilder));
       if (namespaceCtx != null) {
-        factoryBuilder = documentFactoryBuilder().withNamespaceAware(true);
+        factoryBuilder = factoryBuilder.withNamespaceAware(true);
       }
       DocumentBuilder docBuilder = factoryBuilder.configure(DocumentBuilderFactory.newInstance()).newDocumentBuilder();
       XmlUtils xml = new XmlUtils(namespaceCtx, factoryBuilder.configure(DocumentBuilderFactory.newInstance()));
@@ -226,5 +233,25 @@ public class XpathMessageSplitter extends MessageSplitterImp {
 
   DocumentBuilderFactoryBuilder documentFactoryBuilder() {
     return getXmlDocumentFactoryConfig() != null ? getXmlDocumentFactoryConfig() : DocumentBuilderFactoryBuilder.newInstance();
+  }
+
+  /**
+   * @return the namespaceContextBuilder
+   */
+  public NamespaceContextBuilder getNamespaceContextBuilder() {
+    return namespaceContextBuilder;
+  }
+
+  /**
+   * @param s the namespaceContextBuilder to set
+   */
+  public void setNamespaceContextBuilder(NamespaceContextBuilder s) {
+    this.namespaceContextBuilder = s;
+  }
+
+  NamespaceContextBuilder namespaceBuilder() {
+    return getNamespaceContextBuilder() != null
+        ? getNamespaceContextBuilder()
+        : new StaticNamespaceContextBuilder(getNamespaceContext());
   }
 }

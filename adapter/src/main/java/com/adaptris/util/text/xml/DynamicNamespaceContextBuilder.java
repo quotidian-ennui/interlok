@@ -17,14 +17,15 @@ package com.adaptris.util.text.xml;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.NamespaceContext;
-import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Attr;
@@ -38,80 +39,100 @@ import org.xml.sax.SAXException;
 import com.adaptris.core.AdaptrisMessage;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 
+/**
+ * @config dynamic-namespace-context-builder
+ * @author lchan
+ *
+ */
 @XStreamAlias("dynamic-namespace-context-builder")
-public class DynamicNamespaceContextBuilder implements NamespaceContextBuilder {
+public class DynamicNamespaceContextBuilder extends NamespaceContextBuilder {
 
   @Override
-  public NamespaceContext create(AdaptrisMessage msg, DocumentBuilderFactory builder) throws Exception {
+  public NamespaceContext build(AdaptrisMessage msg, DocumentBuilder builder) throws Exception {
     return new MyNamespaceContext(createDocument(msg, builder));
   }
 
-  private static Document createDocument(AdaptrisMessage msg, DocumentBuilderFactory builder)
+  private static Document createDocument(AdaptrisMessage msg, DocumentBuilder builder)
       throws ParserConfigurationException, IOException, SAXException {
     Document result = null;
     try (InputStream in = msg.getInputStream()) {
-      result = builder.newDocumentBuilder().parse(new InputSource(in));
+      result = builder.parse(new InputSource(in));
     }
     return result;
   }
 
   private class MyNamespaceContext implements NamespaceContext {
     private static final String DEFAULT_NS = "DEFAULT";
-    private Map<String, String> prefix2Uri = new HashMap<String, String>();
-    private Map<String, String> uri2Prefix = new HashMap<String, String>();
+    private Map<String, String> prefixMap = new HashMap<>();
+    private Map<String, Set<String>> nsMap = new HashMap<>();
 
     public MyNamespaceContext(Document document) {
-      examineNode(document.getFirstChild(), false);
+      examineNode(document.getFirstChild());
     }
 
-    private void examineNode(Node node, boolean attributesOnly) {
+    private void examineNode(Node node) {
       NamedNodeMap attributes = node.getAttributes();
       for (int i = 0; i < attributes.getLength(); i++) {
         Node attribute = attributes.item(i);
         storeAttribute((Attr) attribute);
       }
-
-      if (!attributesOnly) {
-        NodeList chields = node.getChildNodes();
-        for (int i = 0; i < chields.getLength(); i++) {
-          Node chield = chields.item(i);
-          if (chield.getNodeType() == Node.ELEMENT_NODE) examineNode(chield, false);
-        }
+      NodeList children = node.getChildNodes();
+      for (int i = 0; i < children.getLength(); i++) {
+        Node child = children.item(i);
+        if (child.getNodeType() == Node.ELEMENT_NODE) examineNode(child);
       }
     }
 
     private void storeAttribute(Attr attribute) {
       if (attribute.getNamespaceURI() != null && attribute.getNamespaceURI().equals(XMLConstants.XMLNS_ATTRIBUTE_NS_URI)) {
         if (attribute.getNodeName().equals(XMLConstants.XMLNS_ATTRIBUTE)) {
-          putInCache(DEFAULT_NS, attribute.getNodeValue());
+          store(DEFAULT_NS, attribute.getNodeValue());
         }
         else {
-          putInCache(attribute.getLocalName(), attribute.getNodeValue());
+          store(attribute.getLocalName(), attribute.getNodeValue());
         }
       }
-
     }
 
-    private void putInCache(String prefix, String uri) {
-      prefix2Uri.put(prefix, uri);
-      uri2Prefix.put(uri, prefix);
+    private void store(String prefix, String uri) {
+      prefixMap.put(prefix, uri);
+      Set<String> prefixes = nsMap.get(uri);
+      if (prefixes == null) {
+        prefixes = new HashSet<>();
+      }
+      prefixes.add(prefix);
+      nsMap.put(uri, prefixes);
     }
 
+    @Override
     public String getNamespaceURI(String prefix) {
-      if (prefix == null || prefix.equals(XMLConstants.DEFAULT_NS_PREFIX)) {
-        return prefix2Uri.get(DEFAULT_NS);
+      if (isNull(prefix)) {
+        return XMLConstants.NULL_NS_URI;
       }
-      else {
-        return prefix2Uri.get(prefix);
-      }
+      String nsURI = prefixMap.get(prefix);
+      return isNull(nsURI) ? XMLConstants.NULL_NS_URI : nsURI;
     }
 
+    @Override
     public String getPrefix(String namespaceURI) {
-      return uri2Prefix.get(namespaceURI);
+      if (isNull(namespaceURI)) {
+        return null;
+      }
+      Set<String> prefixes = nsMap.get(namespaceURI);
+      return isNull(prefixes) ? null : prefixes.iterator().next();
     }
 
-    public Iterator getPrefixes(String namespaceURI) {
-      return Arrays.asList(uri2Prefix.get(namespaceURI)).iterator();
+    @Override
+    public Iterator<String> getPrefixes(String namespaceURI) {
+      if (isNull(namespaceURI)) {
+        return null;
+      }
+      Set<String> prefixes = nsMap.get(namespaceURI);
+      return isNull(prefixes) ? null : prefixes.iterator();
+    }
+
+    private boolean isNull(Object value) {
+      return null == value;
     }
   }
 
