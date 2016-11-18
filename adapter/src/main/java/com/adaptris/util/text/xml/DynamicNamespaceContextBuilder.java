@@ -45,7 +45,7 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  *
  */
 @XStreamAlias("dynamic-namespace-context-builder")
-public class DynamicNamespaceContextBuilder extends NamespaceContextBuilder {
+public class DynamicNamespaceContextBuilder implements NamespaceContextBuilder {
 
   @Override
   public NamespaceContext build(AdaptrisMessage msg, DocumentBuilder builder) throws Exception {

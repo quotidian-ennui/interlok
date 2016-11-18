@@ -107,13 +107,10 @@ public class XpathMetadataService extends ServiceImp {
 
     Set<MetadataElement> metadataElements = new HashSet<MetadataElement>();
     try {
-      DocumentBuilderFactoryBuilder builder = documentFactoryBuilder();
+      DocumentBuilderFactoryBuilder factoryBuilder = documentFactoryBuilder();
       NamespaceContextBuilder namespaceBuilder = namespaceBuilder();
-      NamespaceContext namespaceCtx = namespaceBuilder.build(msg, namespaceBuilder.newDocumentBuilder(builder));
-      if (namespaceCtx != null) {
-        builder.setNamespaceAware(true);
-      }
-      Document doc = XmlHelper.createDocument(msg, builder);
+      NamespaceContext namespaceCtx = namespaceBuilder.build(msg, factoryBuilder.build().newDocumentBuilder());
+      Document doc = XmlHelper.createDocument(msg, factoryBuilder);
       for (XpathQuery query : queriesToExecute) {
         metadataElements.add(query.resolveXpath(doc, namespaceCtx, query.createXpathQuery(msg)));
       }

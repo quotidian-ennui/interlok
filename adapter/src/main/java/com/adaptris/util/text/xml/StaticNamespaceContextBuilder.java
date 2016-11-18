@@ -29,7 +29,7 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  *
  */
 @XStreamAlias("static-namespace-context-builder")
-public class StaticNamespaceContextBuilder extends NamespaceContextBuilder {
+public class StaticNamespaceContextBuilder implements NamespaceContextBuilder {
   @Valid
   private KeyValuePairSet namespaceContext;
 

@@ -87,8 +87,10 @@ public class XpathMessageSplitter extends MessageSplitterImp {
   @AdvancedConfig
   private String encoding = null;
   @AdvancedConfig
+  @Deprecated
   private KeyValuePairSet namespaceContext;
   @AdvancedConfig
+  @Valid
   private DocumentBuilderFactoryBuilder xmlDocumentFactoryConfig;
   @AdvancedConfig
   @Valid
@@ -113,10 +115,7 @@ public class XpathMessageSplitter extends MessageSplitterImp {
     try {
       NamespaceContextBuilder namespaceBuilder = namespaceBuilder();
       DocumentBuilderFactoryBuilder factoryBuilder = documentFactoryBuilder();
-      NamespaceContext namespaceCtx = namespaceBuilder.build(msg, namespaceBuilder.newDocumentBuilder(factoryBuilder));
-      if (namespaceCtx != null) {
-        factoryBuilder = factoryBuilder.withNamespaceAware(true);
-      }
+      NamespaceContext namespaceCtx = namespaceBuilder.build(msg, factoryBuilder.build().newDocumentBuilder());
       DocumentBuilder docBuilder = factoryBuilder.configure(DocumentBuilderFactory.newInstance()).newDocumentBuilder();
       XmlUtils xml = new XmlUtils(namespaceCtx, factoryBuilder.configure(DocumentBuilderFactory.newInstance()));
       NodeList list = resolveXpath(msg, namespaceCtx, factoryBuilder);
