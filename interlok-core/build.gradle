@@ -48,7 +48,7 @@ dependencies {
   compile project(':interlok-common')
 
   compile ("com.thoughtworks.xstream:xstream:$xstreamVersion")
-  compile ("org.codehaus.jettison:jettison:1.2")
+  compile ("org.codehaus.jettison:jettison:1.4.1")
   compile ("io.github.classgraph:classgraph:4.8.60")
   compile ("net.jodah:expiringmap:0.5.9")
   compile ("javax.activation:activation:1.1.1")
